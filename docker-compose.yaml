@@ -1,5 +1,5 @@
 services:
-  mysql:
+  database:
     image: mysql:latest
     restart: always
     environment:
@@ -14,9 +14,9 @@ services:
     image: phpmyadmin/phpmyadmin:latest
     restart: always
     depends_on:
-      - mysql
+      - database
     environment:
-      PMA_HOST: mysql
+      PMA_HOST: database
       MYSQL_ROOT_PASSWORD: password
     ports:
       - "8080:80"

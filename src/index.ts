@@ -1,31 +1,22 @@
-import express, { Express } from "express";
+import express, { Express, Request, Response} from "express";
 import swaggerUi from 'swagger-ui-express';
 import swaggerJSDoc from "swagger-jsdoc";
 
 import { router as studentsRouter} from './routes/students';
 
+import config from '../config.json';
+
 const app: Express = express();
-const port = 3000;
+      app.use(express.json());
+      app.use(express.urlencoded({ extended: true }));
 
-const options = {
-  failOnErrors: true,
-  definition: {
-    openapi: "3.1.0",
-    info: {
-      title: "University Enrollment System",
-      version: "0.0.0",
-      description:
-        "Job Interview Assignment",
-    },
-  },
-  apis: ["**/*.ts"],
-};
+app.post('/setup', async (req: Request, res: Response) => {
+    res.json({hello: 'world'});
+});
 
-const specs = swaggerJSDoc(options);
-app.use('/docs', swaggerUi.serve, swaggerUi.setup(specs))
-app.use("/students", studentsRouter);
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerJSDoc(config.swagger)))
+app.use('/students', studentsRouter);
 
-
-app.listen(port, function(){
-  console.log(`[server]: Server is running at http://localhost:${port}`);
+app.listen(config.server.port, function(){
+  console.log(`[server]: Server is running at http://localhost:${config.server.port}`);
 });
