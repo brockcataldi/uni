@@ -121,3 +121,96 @@ export const INSERT_STUDENT = `
     INSERT INTO students (name, email)
     VALUES (?, ?)
 `;
+
+/**
+ * Select all students (Migrate away from *)
+ *
+ * @constant {string}
+ */
+export const SELECT_ALL_PROFESSORS = `SELECT * FROM professors`;
+
+/**
+ * Select one student by ID
+ *
+ * Takes one placeholders:
+ * 1. student_id: {number}
+ *
+ * @constant {string}
+ */
+export const SELECT_ONE_PROFESSOR_ID = `SELECT * FROM professors WHERE professor_id = ?`;
+
+/**
+ * Select one student by email
+ *
+ * Takes one placeholders:
+ * 1. email: {string}
+ *
+ * @constant {string}
+ */
+export const SELECT_ONE_PROFESSOR_EMAIL = `SELECT * FROM professors WHERE email = ?`;
+
+/**
+ * Insert Student
+ *
+ * Takes two placeholders:
+ * 1. name: {string}
+ * 2. email: {string}
+ *
+ * @constant {string}
+ */
+export const INSERT_PROFESSOR = `
+    INSERT INTO professors (name, email)
+    VALUES (?, ?)
+`;
+
+/**
+ * Select all courses
+ *
+ * @constant {string}
+ */
+export const SELECT_ALL_COURSES = `
+    SELECT * 
+    FROM courses 
+    INNER JOIN professors 
+    ON courses.professor_id = professors.professor_id
+`;
+
+/**
+ * Select all courses
+ *
+ * @constant {string}
+ */
+export const SELECT_ALL_COURSES_BY_PROF = `
+    SELECT * FROM courses 
+    INNER JOIN professors 
+    ON courses.professor_id = professors.professor_id
+    WHERE courses.professor_id = ?
+`;
+
+/**
+ * Insert Course
+ *
+ * Takes two placeholders:
+ * 1. course_name: {string}
+ * 2. professor_id: {int}
+ *
+ * @constant {string}
+ */
+export const INSERT_COURSE = `
+    INSERT INTO courses (course_name, professor_id)
+    VALUES (?, ?)
+`;
+
+/**
+ * Insert Enrollment
+ *
+ * Takes two placeholders:
+ * 1. student_id: {int}
+ * 2. course_id: {int}
+ *
+ * @constant {string}
+ */
+export const INSERT_ENROLLMENT = `
+    INSERT INTO enrollments (student_id, course_id)
+    VALUES (?, ?)
+`;

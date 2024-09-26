@@ -19,7 +19,7 @@
  *           type: string
  *           description: The Student's email
  *       example:
- *         id: 1
+ *         student_id: 1
  *         name: Example Exampleton
  *         email: example@example.com
  *     Students:
@@ -27,7 +27,7 @@
  *       items:
  *         $ref: '#/components/schemas/Student'
  *       example:
- *         - id: 1
+ *         - student_id: 1
  *           name: Example Exampleton
  *           email: example@example.com
  *     StudentRequest:
@@ -50,7 +50,7 @@
  * @swagger
  * tags:
  *   name: Students
- *   description: The Students API
+ *   description: The Students Endpoint
  */
 import { Router, Request, Response } from "express";
 import { body, param, validationResult } from "express-validator";
@@ -195,11 +195,21 @@ async function insertStudent(req: Request, res: Response) {
   return;
 }
 
+
+/**
+ * 
+ */
 const router: Router = Router();
 router.get("/", getAllStudents);
 router.get(
   "/:studentId",
-  [param("studentId").isNumeric().notEmpty()],
+  [
+    param("studentId")
+      .isNumeric()
+      .withMessage("ID must be a number")
+      .isInt({ min: 1 })
+      .notEmpty(),
+  ],
   getOneStudent,
 );
 router.post(
