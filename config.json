@@ -1,0 +1,28 @@
+{
+    "server": {
+        "port": 3000
+    },
+    "database": {
+        "user": "uni",
+        "password": "password",
+        "database": "uni"
+    },
+    "swagger": {
+        "failOnErrors": true,
+        "definition": {
+          "openapi": "3.1.0",
+          "info": {
+           "title": "University Enrollment System",
+            "version": "0.0.0",
+            "description":
+              "Job Interview Assignment"
+          },
+          "servers": [
+            {
+              "url": "http://localhost:3000"
+            }
+          ]
+        },
+        "apis": ["**/*.ts"]
+    }
+}

@@ -50,20 +50,110 @@
  * @swagger
  * tags:
  *   name: Students
- *   description: The Students API 
+ *   description: The Students API
+ */
+import { Router, Request, Response } from "express";
+import { body, param, validationResult } from "express-validator";
+import { query } from "../database";
+import {
+  INSERT_STUDENT,
+  SELECT_ALL_STUDENTS,
+  SELECT_ONE_STUDENT_ID,
+} from "../queries";
+
+/**
+ * Returns all the students (I need to paginate this)
+ *
+ * @param req {Request}
+ * @param res {Response}
+ * @returns
+ *
+ * @swagger
  * /students:
  *   get:
  *     summary: Get all students
  *     tags: [Students]
-*     responses:
+ *     responses:
  *       200:
- *         description: The created Student.
+ *         description: Returns all students.
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Students'
  *       500:
  *         description: Some server error
+ */
+async function getAllStudents(req: Request, res: Response) {
+  const { result, value } = await query(SELECT_ALL_STUDENTS);
+
+  if (!result) {
+    res.status(500).json({ errors: [value] });
+    return;
+  }
+
+  res.json(value[0]);
+  return;
+}
+
+/**
+ * Returns one student (I need to paginate this)
+ *
+ * @param req
+ * @param res
+ * @returns
+ *
+ * @swagger
+ * /students/{studentId}:
+ *   get:
+ *     summary: Gets one student
+ *     parameters:
+ *       - in: path
+ *         name: studentId
+ *         schema:
+ *           type: integer
+ *         required: true
+ *         description: Numeric ID of the student to get
+ *     tags: [Students]
+ *     responses:
+ *       200:
+ *         description: One student
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Students'
+ *       500:
+ *         description: Some server error
+ */
+async function getOneStudent(req: Request, res: Response) {
+  const errors = validationResult(req);
+
+  if (!errors.isEmpty()) {
+    res.status(400).json({ errors: errors.array() });
+    return;
+  }
+
+  const { result, value } = await query(SELECT_ONE_STUDENT_ID, [
+    req.params.studentId,
+  ]);
+
+  if (!result) {
+    res.status(500).json({ errors: [value] });
+    return;
+  }
+
+  res.json(value[0]);
+  return;
+}
+
+/**
+ * POST Request to insert student
+ *
+ * @param req Request
+ * @param res Response
+ * @returns void
+ *
+ * @swagger
+ * /students:
  *   post:
  *     summary: Creates new student
  *     tags: [Students]
@@ -82,21 +172,43 @@
  *               $ref: '#/components/schemas/Student'
  *       500:
  *         description: Some server error
- *
  */
-import { Router, Request, Response } from "express";
-import { query } from "../database";
+async function insertStudent(req: Request, res: Response) {
+  const errors = validationResult(req);
+
+  if (!errors.isEmpty()) {
+    res.status(400).json({ errors: errors.array() });
+    return;
+  }
+
+  const { result, value } = await query(INSERT_STUDENT, [
+    req.body.name,
+    req.body.email,
+  ]);
+
+  if (!result) {
+    res.status(500).json({ errors: [value] });
+    return;
+  }
+
+  res.json(value[0]);
+  return;
+}
 
 const router: Router = Router();
-
-router.get('/', async (req: Request, res: Response) => {
-    const [result, ] = await query('SELECT * FROM students');
-    res.json(result);
-})
-
-router.post('/', async (req: Request, res: Response) => {
-    // const [result, ] = await query('SELECT * FROM students');
-    res.json({ 'hello': req.body.name });
-})
+router.get("/", getAllStudents);
+router.get(
+  "/:studentId",
+  [param("studentId").isNumeric().notEmpty()],
+  getOneStudent,
+);
+router.post(
+  "/",
+  [
+    body("name").notEmpty().trim().escape(),
+    body("email").isEmail().trim().escape(),
+  ],
+  insertStudent,
+);
 
 export { router };
