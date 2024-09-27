@@ -5,7 +5,7 @@
 * I used *'s in the SELECT statements intentionally to show what is being delivered via each query, obviously not ideal for production it's more of until I know what the ideal return value is I'll return it all. 
 * There isn't a user authentication flow nor an access control system, this is kind of in the open. 
 * For time constraints I went with a code duplication rather than overt abstraction. I feel as if it's easier to diagnose with duplication, and if I were to refine this, I'd abstract significantly more.
-* Along with if the logic demands it leverage the type system more. 
+* Along with if the logic demands it, I'd leverage the type system more. 
 
 ## Required Software
 
