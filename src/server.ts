@@ -1,13 +1,24 @@
-import { tableExists, insert } from "./database";
-import {
-  CREATE_TABLE_COURSES,
-  CREATE_TABLE_ENROLLMENTS,
-  CREATE_TABLE_GRADES,
-  CREATE_TABLE_PROFESSORS,
-  CREATE_TABLE_STUDENTS,
-} from "./queries";
+import { ValidationError } from "express-validator";
+
+import { tableExists, upsert } from "./database";
 
 import config from "../config.json";
+
+/**
+ * Formatting Validator errors to be more inline with the IError interface
+ *
+ * @param errors ValidationError[]
+ * @returns string[]
+ */
+export function formatErrors(errors: ValidationError[]): string[] {
+  return errors.map((value) => {
+    if ("path" in value) {
+      return `${value.path} - ${value.msg}`;
+    }
+
+    return value.msg;
+  });
+}
 
 export async function initialize() {
   // I am having a moral conundrum between
@@ -16,19 +27,60 @@ export async function initialize() {
   // this might be the cleaner options
 
   if (!(await tableExists("students"))) {
-    console.log(await insert(CREATE_TABLE_STUDENTS));
+    console.log(
+      await upsert(`
+    CREATE TABLE students (
+        student_id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) UNIQUE NOT NULL
+    );
+`),
+    );
   }
   if (!(await tableExists("professors"))) {
-    console.log(await insert(CREATE_TABLE_PROFESSORS));
+    console.log(
+      await upsert(`
+    CREATE TABLE professors (
+        professor_id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) UNIQUE NOT NULL
+    );
+`),
+    );
   }
   if (!(await tableExists("courses"))) {
-    console.log(await insert(CREATE_TABLE_COURSES));
+    console.log(
+      await upsert(`
+    CREATE TABLE courses (
+        course_id SERIAL PRIMARY KEY,
+        course_name VARCHAR(255) NOT NULL,
+        professor_id BIGINT UNSIGNED REFERENCES professors(professor_id)
+    );
+`),
+    );
   }
   if (!(await tableExists("enrollments"))) {
-    console.log(await insert(CREATE_TABLE_ENROLLMENTS));
+    console.log(
+      await upsert(`
+    CREATE TABLE enrollments (
+        enrollment_id SERIAL PRIMARY KEY,
+        student_id BIGINT UNSIGNED REFERENCES students(student_id),
+        course_id BIGINT UNSIGNED REFERENCES courses(course_id),
+        UNIQUE(student_id, course_id)
+    );
+`),
+    );
   }
   if (!(await tableExists("grades"))) {
-    console.log(await insert(CREATE_TABLE_GRADES));
+    console.log(
+      await upsert(`
+    CREATE TABLE grades (
+        grade_id SERIAL PRIMARY KEY,
+        enrollment_id BIGINT UNSIGNED REFERENCES enrollments(enrollment_id),
+        grade DECIMAL(5,2) CHECK(grade >= 0 AND grade <= 100)
+    );
+`),
+    );
   }
 
   console.log(

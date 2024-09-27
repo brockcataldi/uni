@@ -5,15 +5,28 @@ import mysql, {
 } from "mysql2/promise";
 
 import config from "../config.json";
-import { TABLE_EXISTS } from "./queries";
 
+/**
+ * IDatabaseSelectResult
+ *
+ * @param result {boolean} whether or not the query ran into an error
+ * @param value {string | [RowDataPacket[], FieldPacket[]]} if there's an error, return the error if not return the values
+ */
 interface IDatabaseSelectResult {
   result: boolean;
   value: [RowDataPacket[], FieldPacket[]] | string;
 }
 
-export async function select<T>(
+/**
+ * A function meant for select statements, handles return values cleanly.
+ *
+ * @param sql {string} SELECT statement
+ * @param values {any[]} Values for placeholders
+ * @returns IDatabaseSelectResult
+ */
+export async function select(
   sql: string,
+  /* eslint-disable  @typescript-eslint/no-explicit-any */
   values: any[] = [],
 ): Promise<IDatabaseSelectResult> {
   try {
@@ -47,13 +60,27 @@ export async function select<T>(
   }
 }
 
+/**
+ * IDatabaseInsertResult
+ *
+ * @param result {boolean} whether or not the query ran into an error
+ * @param value {string | [ResultSetHeader, FieldPacket[]]} if there's an error, return the error if not return the values
+ */
 interface IDatabaseInsertResult {
   result: boolean;
   value: [ResultSetHeader, FieldPacket[]] | string;
 }
 
-export async function insert<T>(
+/**
+ * A function meant for insert statements, handles return values cleanly.
+ *
+ * @param sql {string} INSERT or UPDATE statement
+ * @param values {any[]} Values for placeholders
+ * @returns IDatabaseInsertResult
+ */
+export async function upsert(
   sql: string,
+  /* eslint-disable  @typescript-eslint/no-explicit-any */
   values: any[] = [],
 ): Promise<IDatabaseInsertResult> {
   try {
@@ -87,11 +114,23 @@ export async function insert<T>(
   }
 }
 
+/**
+ * Checks if a table exists
+ *
+ * @param tableName {string} the table to query
+ * @returns Promise<boolean>
+ */
 export async function tableExists(tableName: string): Promise<boolean> {
-  const { result, value } = await select(TABLE_EXISTS, [
-    config.database.database,
-    tableName,
-  ]);
+  const { result, value } = await select(
+    `
+    SELECT * 
+    FROM information_schema.tables
+    WHERE table_schema = ? 
+    AND table_name = ?
+    LIMIT 1;
+`,
+    [config.database.database, tableName],
+  );
 
   if (result === true && typeof value !== "string") {
     const [rows] = value;

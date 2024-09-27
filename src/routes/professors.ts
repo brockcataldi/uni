@@ -6,13 +6,8 @@
  */
 import { Router, Request, Response } from "express";
 import { body, param, validationResult } from "express-validator";
-import { insert, select } from "../database";
-import {
-  INSERT_PROFESSOR,
-  SELECT_ALL_COURSES_BY_PROF,
-  SELECT_ALL_PROFESSORS,
-  SELECT_ONE_PROFESSOR_ID,
-} from "../queries";
+import { upsert, select } from "../database";
+import { formatErrors } from "../server";
 
 /**
  * Get all professorss
@@ -32,19 +27,118 @@ import {
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Professors'
+ *               $ref: '#/components/schemas/IProfessors'
+ *       400:
+ *         description: A Request Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/IError'
  *       500:
- *         description: Some server error
+ *         description: A Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/IError'
  */
 async function getAllProfessors(req: Request, res: Response) {
-  const { result, value } = await select(SELECT_ALL_PROFESSORS);
+  const { result, value } = await select(
+    `
+    SELECT * FROM professors
+    `,
+  );
 
-  if (!result) {
+  if (!result || typeof value === "string") {
     res.status(500).json({ errors: [value] });
     return;
   }
 
   res.json(value[0]);
+  return;
+}
+
+/**
+ * Insert a professor
+ *
+ * @param req Request
+ * @param res Response
+ * @returns void
+ *
+ * @swagger
+ * /professors:
+ *   post:
+ *     summary: Creates new professor
+ *     tags: [Professors]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/IProfessorRequest'
+ *     responses:
+ *       200:
+ *         description: The created Professor.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/IProfessorInserted'
+ *       400:
+ *         description: A Request Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/IError'
+ *       500:
+ *         description: A Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/IError'
+ */
+async function insertProfessor(req: Request, res: Response) {
+  const errors = validationResult(req);
+
+  if (!errors.isEmpty()) {
+    res.status(400).json({ errors: formatErrors(errors.array()) });
+    return;
+  }
+
+  const existsQuery = await select(
+    `
+      SELECT * 
+      FROM professors 
+      WHERE professors.email = ?
+      LIMIT 1;
+    `,
+    [req.body.email],
+  );
+
+  if (!existsQuery.result || typeof existsQuery.value === "string") {
+    res.status(500).json({ errors: [existsQuery.value] });
+    return;
+  }
+
+  if (existsQuery.value[0].length > 0) {
+    res.status(500).json({ errors: ["Professor already exists"] });
+    return;
+  }
+
+  const insertQuery = await upsert(
+    `
+      INSERT INTO professors (name, email)
+      VALUES (?, ?)
+   `,
+    [req.body.name, req.body.email],
+  );
+
+  if (!insertQuery.result || typeof insertQuery.value === "string") {
+    res.status(500).json({ errors: [insertQuery.value] });
+    return;
+  }
+
+  res.json({
+    professor_id: insertQuery.value[0].insertId,
+  });
   return;
 }
 
@@ -73,28 +167,49 @@ async function getAllProfessors(req: Request, res: Response) {
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Professors'
+ *               $ref: '#/components/schemas/IProfessor'
+ *       400:
+ *         description: A Request Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/IError'
  *       500:
- *         description: Some server error
+ *         description: A Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/IError'
  */
 async function getProfessor(req: Request, res: Response) {
   const errors = validationResult(req);
 
   if (!errors.isEmpty()) {
-    res.status(400).json({ errors: errors.array() });
+    res.status(400).json({ errors: formatErrors(errors.array()) });
     return;
   }
 
-  const { result, value } = await select(SELECT_ONE_PROFESSOR_ID, [
-    req.params.professorId,
-  ]);
+  const { result, value } = await select(
+    `
+      SELECT * 
+      FROM professors 
+      WHERE professor_id = ? 
+      LIMIT 1;
+    `,
+    [req.params.professorId],
+  );
 
-  if (!result) {
+  if (!result || typeof value === "string") {
     res.status(500).json({ errors: [value] });
     return;
   }
 
-  res.json(value[0]);
+  if (value[0].length === 0) {
+    res.status(500).json({ errors: ["Professor doesn't exist"] });
+    return;
+  }
+
+  res.json(value[0][0]);
   return;
 }
 
@@ -108,6 +223,7 @@ async function getProfessor(req: Request, res: Response) {
  * @swagger
  * /professors/{professorId}/courses:
  *   get:
+ *     tags: [Professors]
  *     summary: Gets all the courses for one professor
  *     parameters:
  *       - in: path
@@ -116,28 +232,43 @@ async function getProfessor(req: Request, res: Response) {
  *           type: integer
  *         required: true
  *         description: Numeric ID of the professor to get
- *     tags: [Professors]
  *     responses:
  *       200:
- *         description: One professor
+ *         description: All of the professor's courses
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Courses'
+ *               $ref: '#/components/schemas/IProfessorCourses'
+ *       400:
+ *         description: A Request Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/IError'
  *       500:
- *         description: Some server error
+ *         description: A Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/IError'
  */
 async function getProfessorCourses(req: Request, res: Response) {
   const errors = validationResult(req);
 
   if (!errors.isEmpty()) {
-    res.status(400).json({ errors: errors.array() });
+    res.status(400).json({ errors: formatErrors(errors.array()) });
     return;
   }
 
-  const { result, value } = await select(SELECT_ALL_COURSES_BY_PROF, [
-    req.params.professorId,
-  ]);
+  const { result, value } = await select(
+    `
+    SELECT * FROM courses 
+    INNER JOIN professors 
+    ON courses.professor_id = professors.professor_id
+    WHERE courses.professor_id = ?
+  `,
+    [req.params.professorId],
+  );
 
   if (!result) {
     res.status(500).json({ errors: [value] });
@@ -149,61 +280,7 @@ async function getProfessorCourses(req: Request, res: Response) {
 }
 
 /**
- * Insert a professor
- *
- * @param req Request
- * @param res Response
- * @returns void
- *
- * @swagger
- * /professors:
- *   post:
- *     summary: Creates new professor
- *     tags: [Professors]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/ProfessorRequest'
- *     responses:
- *       200:
- *         description: The created Professor.
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Professor'
- *       500:
- *         description: Some server error
- */
-async function insertProfessor(req: Request, res: Response) {
-  const errors = validationResult(req);
-
-  if (!errors.isEmpty()) {
-    res.status(400).json({ errors: errors.array() });
-    return;
-  }
-
-  const { result, value } = await insert(INSERT_PROFESSOR, [
-    req.body.name,
-    req.body.email,
-  ]);
-
-  if (!result) {
-    res.status(500).json({ errors: [value] });
-    return;
-  }
-
-  if (typeof value[0] !== "string") {
-    res.json({
-      professor_id: value[0].insertId,
-    });
-  }
-  return;
-}
-
-/**
- * Professors Router
+ * Defining routes, validation and sanitization.
  */
 const router: Router = Router();
 
