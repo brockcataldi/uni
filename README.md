@@ -27,7 +27,7 @@ To run a development server.
 npm run dev
 ```
 
-To build the system, this was acting kinda funking when running this command.
+To build the system.
 ```bash
 npm run build
 ```
