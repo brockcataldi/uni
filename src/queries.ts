@@ -188,6 +188,19 @@ export const SELECT_ALL_COURSES_BY_PROF = `
 `;
 
 /**
+ * Select all courses
+ *
+ * @constant {string}
+ */
+export const SELECT_ALL_STUDENTS_BY_ENROLLMENT = `
+    SELECT * 
+    FROM students 
+    INNER JOIN enrollments 
+    ON students.student_id = enrollments.student_id 
+    WHERE enrollments.course_id = ?
+`;
+
+/**
  * Insert Course
  *
  * Takes two placeholders:
@@ -214,3 +227,4 @@ export const INSERT_ENROLLMENT = `
     INSERT INTO enrollments (student_id, course_id)
     VALUES (?, ?)
 `;
+

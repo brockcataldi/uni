@@ -1,4 +1,4 @@
-import { tableExists, query } from "./database";
+import { tableExists, insert } from "./database";
 import {
   CREATE_TABLE_COURSES,
   CREATE_TABLE_ENROLLMENTS,
@@ -16,19 +16,19 @@ export async function initialize() {
   // this might be the cleaner options
 
   if (!(await tableExists("students"))) {
-    console.log(await query(CREATE_TABLE_STUDENTS));
+    console.log(await insert(CREATE_TABLE_STUDENTS));
   }
   if (!(await tableExists("professors"))) {
-    console.log(await query(CREATE_TABLE_PROFESSORS));
+    console.log(await insert(CREATE_TABLE_PROFESSORS));
   }
   if (!(await tableExists("courses"))) {
-    console.log(await query(CREATE_TABLE_COURSES));
+    console.log(await insert(CREATE_TABLE_COURSES));
   }
   if (!(await tableExists("enrollments"))) {
-    console.log(await query(CREATE_TABLE_ENROLLMENTS));
+    console.log(await insert(CREATE_TABLE_ENROLLMENTS));
   }
   if (!(await tableExists("grades"))) {
-    console.log(await query(CREATE_TABLE_GRADES));
+    console.log(await insert(CREATE_TABLE_GRADES));
   }
 
   console.log(

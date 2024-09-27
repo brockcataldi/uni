@@ -1,60 +1,12 @@
 /**
  * @swagger
- * components:
- *   schemas:
- *     Student:
- *       type: object
- *       required:
- *         - student_id
- *         - name
- *         - email
- *       properties:
- *         student_id:
- *           type: string
- *           description: The auto-generated id of the student
- *         name:
- *           type: string
- *           description: The name of the Student
- *         email:
- *           type: string
- *           description: The Student's email
- *       example:
- *         student_id: 1
- *         name: Example Exampleton
- *         email: example@example.com
- *     Students:
- *       type: array
- *       items:
- *         $ref: '#/components/schemas/Student'
- *       example:
- *         - student_id: 1
- *           name: Example Exampleton
- *           email: example@example.com
- *     StudentRequest:
- *       type: object
- *       required:
- *         - name
- *         - email
- *       properties:
- *         name:
- *           type: string
- *           description: The name of the Student
- *         email:
- *           type: string
- *           description: The Student's email
- *       example:
- *         name: Example Exampleton
- *         email: example@example.com
- */
-/**
- * @swagger
  * tags:
  *   name: Students
  *   description: The Students Endpoint
  */
 import { Router, Request, Response } from "express";
 import { body, param, validationResult } from "express-validator";
-import { query } from "../database";
+import { insert, select } from "../database";
 import {
   INSERT_STUDENT,
   SELECT_ALL_STUDENTS,
@@ -84,7 +36,7 @@ import {
  *         description: Some server error
  */
 async function getAllStudents(req: Request, res: Response) {
-  const { result, value } = await query(SELECT_ALL_STUDENTS);
+  const { result, value } = await select(SELECT_ALL_STUDENTS);
 
   if (!result) {
     res.status(500).json({ errors: [value] });
@@ -132,7 +84,7 @@ async function getOneStudent(req: Request, res: Response) {
     return;
   }
 
-  const { result, value } = await query(SELECT_ONE_STUDENT_ID, [
+  const { result, value } = await select(SELECT_ONE_STUDENT_ID, [
     req.params.studentId,
   ]);
 
@@ -181,7 +133,7 @@ async function insertStudent(req: Request, res: Response) {
     return;
   }
 
-  const { result, value } = await query(INSERT_STUDENT, [
+  const { result, value } = await insert(INSERT_STUDENT, [
     req.body.name,
     req.body.email,
   ]);
@@ -191,16 +143,33 @@ async function insertStudent(req: Request, res: Response) {
     return;
   }
 
-  res.json(value[0]);
+  if (typeof value[0] !== "string") {
+    res.json({
+      student_id: value[0].insertId,
+    });
+  }
   return;
 }
 
-
 /**
- * 
+ *
  */
 const router: Router = Router();
+
+// GET /students/
 router.get("/", getAllStudents);
+
+// POST /students/
+router.post(
+  "/",
+  [
+    body("name").notEmpty().trim().escape(),
+    body("email").isEmail().trim().escape(),
+  ],
+  insertStudent,
+);
+
+// GET /students/{studentId}
 router.get(
   "/:studentId",
   [
@@ -211,14 +180,6 @@ router.get(
       .notEmpty(),
   ],
   getOneStudent,
-);
-router.post(
-  "/",
-  [
-    body("name").notEmpty().trim().escape(),
-    body("email").isEmail().trim().escape(),
-  ],
-  insertStudent,
 );
 
 export { router };

@@ -1,17 +1,21 @@
-import mysql, { FieldPacket, RowDataPacket } from "mysql2/promise";
+import mysql, {
+  FieldPacket,
+  ResultSetHeader,
+  RowDataPacket,
+} from "mysql2/promise";
 
 import config from "../config.json";
 import { TABLE_EXISTS } from "./queries";
 
-interface IDatabaseResult {
+interface IDatabaseSelectResult {
   result: boolean;
   value: [RowDataPacket[], FieldPacket[]] | string;
 }
 
-export async function query(
+export async function select<T>(
   sql: string,
   values: any[] = [],
-): Promise<IDatabaseResult> {
+): Promise<IDatabaseSelectResult> {
   try {
     const connection = await mysql.createConnection(config.database);
     const value = await connection.execute<RowDataPacket[]>(sql, values);
@@ -22,16 +26,69 @@ export async function query(
       value,
     };
   } catch (error) {
-    console.error(error);
+    if (error instanceof Error) {
+      return {
+        result: false,
+        value: error.message,
+      };
+    }
+
+    if (typeof error === "string") {
+      return {
+        result: false,
+        value: error,
+      };
+    }
+
     return {
       result: false,
-      value: "There was a database error",
+      value: "An error occured",
+    };
+  }
+}
+
+interface IDatabaseInsertResult {
+  result: boolean;
+  value: [ResultSetHeader, FieldPacket[]] | string;
+}
+
+export async function insert<T>(
+  sql: string,
+  values: any[] = [],
+): Promise<IDatabaseInsertResult> {
+  try {
+    const connection = await mysql.createConnection(config.database);
+    const value = await connection.execute<ResultSetHeader>(sql, values);
+    await connection.end();
+
+    return {
+      result: true,
+      value,
+    };
+  } catch (error) {
+    if (error instanceof Error) {
+      return {
+        result: false,
+        value: error.message,
+      };
+    }
+
+    if (typeof error === "string") {
+      return {
+        result: false,
+        value: error,
+      };
+    }
+
+    return {
+      result: false,
+      value: "An error occured",
     };
   }
 }
 
 export async function tableExists(tableName: string): Promise<boolean> {
-  const { result, value } = await query(TABLE_EXISTS, [
+  const { result, value } = await select(TABLE_EXISTS, [
     config.database.database,
     tableName,
   ]);

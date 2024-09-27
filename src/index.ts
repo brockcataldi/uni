@@ -8,7 +8,7 @@ import { initialize } from "./server";
 import { router as studentsRouter } from "./routes/students";
 import { router as professorsRouter } from "./routes/professors";
 import { router as coursesRouter } from "./routes/courses";
-import { router as enrollmentRoute } from './routes/enrollments';
+import { router as gradesRouter } from "./routes/grades";
 
 const app: Express = express();
 app.use(express.json());
@@ -21,6 +21,6 @@ app.use(
 app.use("/students", studentsRouter);
 app.use("/professors", professorsRouter);
 app.use("/courses", coursesRouter);
-app.use("/enrollments", enrollmentRoute);
+app.use("/grades", gradesRouter);
 
 app.listen(config.server.port, initialize);

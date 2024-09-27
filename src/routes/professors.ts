@@ -1,60 +1,12 @@
 /**
  * @swagger
- * components:
- *   schemas:
- *     Professor:
- *       type: object
- *       required:
- *         - professor_id
- *         - name
- *         - email
- *       properties:
- *         professor_id:
- *           type: string
- *           description: The auto-generated id of the professor
- *         name:
- *           type: string
- *           description: The name of the Professor
- *         email:
- *           type: string
- *           description: The Professor's email
- *       example:
- *         professor_id: 1
- *         name: Example Exampleton
- *         email: example@example.com
- *     Professors:
- *       type: array
- *       items:
- *         $ref: '#/components/schemas/Professor'
- *       example:
- *         - professor_id: 1
- *           name: Example Exampleton
- *           email: example@example.com
- *     ProfessorRequest:
- *       type: object
- *       required:
- *         - name
- *         - email
- *       properties:
- *         name:
- *           type: string
- *           description: The name of the Professor
- *         email:
- *           type: string
- *           description: The Professor's email
- *       example:
- *         name: Example Exampleton
- *         email: example@example.com
- */
-/**
- * @swagger
  * tags:
  *   name: Professors
  *   description: The Professors Endpoint
  */
 import { Router, Request, Response } from "express";
 import { body, param, validationResult } from "express-validator";
-import { query } from "../database";
+import { insert, select } from "../database";
 import {
   INSERT_PROFESSOR,
   SELECT_ALL_COURSES_BY_PROF,
@@ -85,7 +37,7 @@ import {
  *         description: Some server error
  */
 async function getAllProfessors(req: Request, res: Response) {
-  const { result, value } = await query(SELECT_ALL_PROFESSORS);
+  const { result, value } = await select(SELECT_ALL_PROFESSORS);
 
   if (!result) {
     res.status(500).json({ errors: [value] });
@@ -133,7 +85,7 @@ async function getProfessor(req: Request, res: Response) {
     return;
   }
 
-  const { result, value } = await query(SELECT_ONE_PROFESSOR_ID, [
+  const { result, value } = await select(SELECT_ONE_PROFESSOR_ID, [
     req.params.professorId,
   ]);
 
@@ -176,26 +128,25 @@ async function getProfessor(req: Request, res: Response) {
  *         description: Some server error
  */
 async function getProfessorCourses(req: Request, res: Response) {
-    const errors = validationResult(req);
+  const errors = validationResult(req);
 
-    if (!errors.isEmpty()) {
-        res.status(400).json({ errors: errors.array() });
-        return;
-    }
-
-    const { result, value } = await query(SELECT_ALL_COURSES_BY_PROF, [
-        req.params.professorId,
-    ]);
-
-    if (!result) {
-        res.status(500).json({ errors: [value] });
-        return;
-    }
-
-    res.json(value[0]);
+  if (!errors.isEmpty()) {
+    res.status(400).json({ errors: errors.array() });
     return;
- }
+  }
 
+  const { result, value } = await select(SELECT_ALL_COURSES_BY_PROF, [
+    req.params.professorId,
+  ]);
+
+  if (!result) {
+    res.status(500).json({ errors: [value] });
+    return;
+  }
+
+  res.json(value[0]);
+  return;
+}
 
 /**
  * Insert a professor
@@ -233,7 +184,7 @@ async function insertProfessor(req: Request, res: Response) {
     return;
   }
 
-  const { result, value } = await query(INSERT_PROFESSOR, [
+  const { result, value } = await insert(INSERT_PROFESSOR, [
     req.body.name,
     req.body.email,
   ]);
@@ -243,25 +194,23 @@ async function insertProfessor(req: Request, res: Response) {
     return;
   }
 
-  res.json(value[0]);
+  if (typeof value[0] !== "string") {
+    res.json({
+      professor_id: value[0].insertId,
+    });
+  }
   return;
 }
 
 /**
- * Professors Router 
+ * Professors Router
  */
 const router: Router = Router();
+
+// POST /professors/
 router.get("/", getAllProfessors);
-router.get(
-  "/:professorId",
-  [param("professorId").isNumeric().notEmpty()],
-  getProfessor,
-);
-router.get(
-    "/:professorId/courses",
-    [param("professorId").isNumeric().notEmpty()],
-    getProfessorCourses,
-  );
+
+// POST /professors/
 router.post(
   "/",
   [
@@ -269,6 +218,20 @@ router.post(
     body("email").isEmail().trim().escape(),
   ],
   insertProfessor,
+);
+
+// GET /professors/{professorId}
+router.get(
+  "/:professorId",
+  [param("professorId").isNumeric().isInt({ min: 1 }).notEmpty()],
+  getProfessor,
+);
+
+// GET /professors/{professorId}/courses
+router.get(
+  "/:professorId/courses",
+  [param("professorId").isNumeric().isInt({ min: 1 }).notEmpty()],
+  getProfessorCourses,
 );
 
 export { router };
