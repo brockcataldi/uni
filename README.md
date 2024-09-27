@@ -2,7 +2,9 @@
 
 ## Considerations
 
+* Database Creds should ALWAYS be stored in at least a .env, but for this instance I put them in a config.json file for ease of shipping, I don't want to ship a .env file. 
 * I used *'s in the SELECT statements intentionally to show what is being delivered via each query, obviously not ideal for production it's more of until I know what the ideal return value is I'll return it all. 
+* Along with shorter-simpler queries for ease of reading.
 * There isn't a user authentication flow nor an access control system, this is kind of in the open. 
 * For time constraints I went with a code duplication rather than overt abstraction. I feel as if it's easier to diagnose with duplication, and if I were to refine this, I'd abstract significantly more.
 * Along with if the logic demands it, I'd leverage the type system more. 
