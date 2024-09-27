@@ -1,5 +1,5 @@
 /**
- * This file isn't used persay it's more for schema generation, plus if I were to expand this, 
+ * This file isn't used persay it's more for schema generation, plus if I were to expand this,
  * I'd lean into the typesystem more.
  */
 

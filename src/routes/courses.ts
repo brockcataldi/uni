@@ -585,8 +585,18 @@ async function getCourseGrades(req: Request, res: Response): Promise<void> {
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ICourseAverage'
+ *       400:
+ *         description: A Request Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/IError'
  *       500:
- *         description: Some server error
+ *         description: A Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/IError'
  */
 async function getCourseAverage(req: Request, res: Response): Promise<void> {
   const errors = validationResult(req);
