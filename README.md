@@ -2,9 +2,9 @@
 
 ## Considerations
 
-For time constraints I went with a code duplication rather than overt abstraction. 
-I feel as if it's easier to diagnose with duplication, and if I were to refine this, I'd abstract significantly more.
-Along with if the logic demands it leverage the type system more. 
+* There isn't a user authentication flow nor an access control system, this is kind of in the open. 
+* For time constraints I went with a code duplication rather than overt abstraction. I feel as if it's easier to diagnose with duplication, and if I were to refine this, I'd abstract significantly more.
+* Along with if the logic demands it leverage the type system more. 
 
 ## Required Software
 
